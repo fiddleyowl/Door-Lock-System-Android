@@ -1,9 +1,6 @@
 package com.philipzhan.doorlocksystem;
 
 import android.security.keystore.*;
-import org.spongycastle.asn1.pkcs.*;
-import org.spongycastle.asn1.x500.*;
-import org.spongycastle.asn1.x509.*;
 import org.spongycastle.operator.*;
 import org.spongycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.spongycastle.pkcs.*;
@@ -13,6 +10,7 @@ import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
+import java.util.Base64;
 
 public class Crypto {
     public static KeyPair generateRSAKeyPair() throws NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException {
@@ -28,7 +26,7 @@ public class Crypto {
     }
 
     private final static String CN_PATTERN = "CN=%s, O=Southern University of Science and Technology, L=Shenzhen, S=Guangdong";
-    public static PKCS10CertificationRequest generateCSR(KeyPair keyPair, String cn) throws IOException, OperatorCreationException {
+    public static PKCS10CertificationRequest generateCSR(KeyPair keyPair, String cn) throws OperatorCreationException {
         String principal = String.format(CN_PATTERN, cn);
 
         PKCS10CertificationRequestBuilder p10Builder = new JcaPKCS10CertificationRequestBuilder(
@@ -45,11 +43,26 @@ public class Crypto {
     }
 
     public String sha256(byte[] byteArrayToHash) throws NoSuchAlgorithmException {
-        return bytesToHex(MessageDigest.getInstance("SHA256").digest(byteArrayToHash));
+        return bytesToHexString(MessageDigest.getInstance("SHA256").digest(byteArrayToHash));
+    }
+
+    public byte[] randomBytes(int length) {
+        byte[] bytes = new byte[length];
+        SecureRandom secureRandom = new SecureRandom();
+        secureRandom.nextBytes(bytes);
+        return bytes;
+    }
+
+    public String randomHexString(int length) {
+        return bytesToHexString(randomBytes(length));
+    }
+
+    public String randomBase64String(int length) {
+        return Base64.getEncoder().encodeToString(randomBytes(length));
     }
 
     private static final char[] HEX_ARRAY = "0123456789abcdef".toCharArray();
-    public static String bytesToHex(byte[] bytes) {
+    public static String bytesToHexString(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 2];
         for (int j = 0; j < bytes.length; j++) {
             int v = bytes[j] & 0xFF;

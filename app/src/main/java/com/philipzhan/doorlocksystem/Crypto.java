@@ -7,16 +7,15 @@ import org.spongycastle.pkcs.*;
 import org.spongycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 
 import javax.security.auth.x500.X500Principal;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.Base64;
 
 public class Crypto {
-    public static KeyPair generateRSAKeyPair() throws NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException {
+    public static KeyPair generateRSAKeyPair(String alias) throws NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException {
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_RSA, "AndroidKeyStore");
         keyPairGenerator.initialize(new KeyGenParameterSpec.Builder(
-                "MainKey",
+                alias,
                 KeyProperties.PURPOSE_SIGN | KeyProperties.PURPOSE_VERIFY | KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
                 .setDigests(KeyProperties.DIGEST_SHA256,
                         KeyProperties.DIGEST_SHA512)
@@ -38,26 +37,26 @@ public class Crypto {
         return csr;
     }
 
-    public String sha256(String stringToHash) throws NoSuchAlgorithmException {
+    public static String sha256(String stringToHash) throws NoSuchAlgorithmException {
         return sha256(stringToHash.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String sha256(byte[] byteArrayToHash) throws NoSuchAlgorithmException {
+    public static String sha256(byte[] byteArrayToHash) throws NoSuchAlgorithmException {
         return bytesToHexString(MessageDigest.getInstance("SHA256").digest(byteArrayToHash));
     }
 
-    public byte[] randomBytes(int length) {
+    public static byte[] randomBytes(int length) {
         byte[] bytes = new byte[length];
         SecureRandom secureRandom = new SecureRandom();
         secureRandom.nextBytes(bytes);
         return bytes;
     }
 
-    public String randomHexString(int length) {
+    public static String randomHexString(int length) {
         return bytesToHexString(randomBytes(length));
     }
 
-    public String randomBase64String(int length) {
+    public static String randomBase64String(int length) {
         return Base64.getEncoder().encodeToString(randomBytes(length));
     }
 

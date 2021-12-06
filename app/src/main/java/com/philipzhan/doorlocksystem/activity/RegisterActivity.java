@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.cert.*;
 import java.security.cert.Certificate;
+import java.security.interfaces.RSAPublicKey;
 import java.util.Base64;
 
 import static com.philipzhan.doorlocksystem.Crypto.*;
@@ -32,6 +33,8 @@ public class RegisterActivity extends AppCompatActivity {
     TextView deviceIDTextView;
     EditText nameEditText;
     EditText certificateEditText;
+
+    KeyPair keyPair;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,7 +64,7 @@ public class RegisterActivity extends AppCompatActivity {
             Toast.makeText(context, "Enter a name before continuing.", Toast.LENGTH_SHORT).show();
             return;
         }
-        KeyPair keyPair = generateRSAKeyPair();
+        keyPair = generateRSAKeyPair("MainKey");
         PKCS10CertificationRequest csr = generateCSR(keyPair, nameEditText.getText().toString());
         String textCSR = "-----BEGIN CERTIFICATE REQUEST-----\n" +
                 Base64.getEncoder().encodeToString(csr.getEncoded()) +
@@ -103,12 +106,19 @@ public class RegisterActivity extends AppCompatActivity {
             InputStream inputStream = new ByteArrayInputStream(certText.getBytes(StandardCharsets.UTF_8));
             Certificate certificate = cf.generateCertificate(inputStream);
             certificate.verify(caCertificate.getPublicKey());
-            Toast.makeText(context, "Certificate is valid.", Toast.LENGTH_SHORT).show();
-            editor.putBoolean("isRegistered", true);
-            editor.apply();
+            RSAPublicKey certificatePublicKey = (RSAPublicKey) certificate.getPublicKey();
+            RSAPublicKey keyPairPublicKey = (RSAPublicKey) keyPair.getPublic();
+            if (certificatePublicKey.getPublicExponent().equals(keyPairPublicKey.getPublicExponent()) && certificatePublicKey.getModulus().equals(keyPairPublicKey.getModulus())) {
+                Toast.makeText(context, "Certificate is valid, registering with Raspberry Pi.", Toast.LENGTH_SHORT).show();
+                editor.putBoolean("isRegistered", true);
+                editor.apply();
+            } else {
+                Toast.makeText(context, "Certificate mismatches. Regenerate a signing request.", Toast.LENGTH_SHORT).show();
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
-            Toast.makeText(context, e.toString(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "Response is invalid.", Toast.LENGTH_SHORT).show();
         }
     }
 

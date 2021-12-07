@@ -23,7 +23,7 @@
             app:layout_constraintStart_toStartOf="parent" app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintEnd_toEndOf="parent"/>
     <TextView
-            android:text="This device is not ready for opening doors. Generate a certificate signing request to let your device signed."
+            android:text="This device is not ready for opening doors. Generate a certificate signing request to get your device signed."
             android:layout_width="347dp"
             android:layout_height="wrap_content" android:id="@+id/textView3"
             android:textAlignment="center"

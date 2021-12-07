@@ -1,5 +1,7 @@
 package com.philipzhan.doorlocksystem;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.security.keystore.*;
 import org.spongycastle.operator.*;
 import org.spongycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -12,6 +14,18 @@ import java.security.*;
 import java.util.Base64;
 
 public class Crypto {
+
+    SharedPreferences sharedPref;
+    SharedPreferences.Editor editor;
+
+    /**
+     * Generates an RSA key pair.
+     * @param alias Alias of the key pair in AndroidKeyStore. Use this alias to retrieve the key pair.
+     * @return Returns the generated key pair.
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchProviderException
+     * @throws InvalidAlgorithmParameterException
+     */
     public static KeyPair generateRSAKeyPair(String alias) throws NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException {
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_RSA, "AndroidKeyStore");
         keyPairGenerator.initialize(new KeyGenParameterSpec.Builder(
@@ -26,8 +40,10 @@ public class Crypto {
 
     private final static String CN_PATTERN = "CN=%s, O=Southern University of Science and Technology, L=Shenzhen, S=Guangdong";
     public static PKCS10CertificationRequest generateCSR(KeyPair keyPair, String cn) throws OperatorCreationException {
+        // Set X.509 certificate attributes.
         String principal = String.format(CN_PATTERN, cn);
 
+        // Build a certificate signing request.
         PKCS10CertificationRequestBuilder p10Builder = new JcaPKCS10CertificationRequestBuilder(
                 new X500Principal(principal), keyPair.getPublic());
         JcaContentSignerBuilder csBuilder = new JcaContentSignerBuilder("SHA256withRSA");
@@ -59,6 +75,8 @@ public class Crypto {
     public static String randomBase64String(int length) {
         return Base64.getEncoder().encodeToString(randomBytes(length));
     }
+
+
 
     private static final char[] HEX_ARRAY = "0123456789abcdef".toCharArray();
     public static String bytesToHexString(byte[] bytes) {

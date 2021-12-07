@@ -1,11 +1,10 @@
 package com.philipzhan.doorlocksystem.activity;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
-import androidx.biometric.BiometricManager;
 import android.os.Build;
 import android.provider.Settings;
 import android.util.Log;
@@ -22,13 +21,8 @@ import com.android.volley.toolbox.Volley;
 import com.philipzhan.doorlocksystem.R;
 
 import java.net.URLEncoder;
-import java.security.NoSuchAlgorithmException;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.concurrent.Executor;
 
-import static android.hardware.biometrics.BiometricManager.Authenticators.BIOMETRIC_STRONG;
-import static android.hardware.biometrics.BiometricManager.Authenticators.DEVICE_CREDENTIAL;
 import static com.philipzhan.doorlocksystem.Crypto.generateSignature;
 import static com.philipzhan.doorlocksystem.Crypto.sha256;
 
@@ -40,9 +34,7 @@ public class MainActivity extends AppCompatActivity {
     SharedPreferences sharedPref;
     SharedPreferences.Editor editor;
 
-    private Executor executor;
-    private BiometricPrompt biometricPrompt;
-    private BiometricPrompt.PromptInfo promptInfo;
+    TextView deviceIDTextView2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,12 +46,18 @@ public class MainActivity extends AppCompatActivity {
 
         sharedPref = context.getSharedPreferences("com.philipzhan.doorlocksystem.preferences", Context.MODE_PRIVATE);
         editor = sharedPref.edit();
+
+        deviceIDTextView2 = findViewById(R.id.deviceIDTextView2);
+
+        deviceIDTextView2.setText("Your device ID is: " + deviceID);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.R)
     public void openDoor(View view) {
-        executor = ContextCompat.getMainExecutor(this);
-        biometricPrompt = new BiometricPrompt(MainActivity.this, executor, new BiometricPrompt.AuthenticationCallback() {
+        Executor executor = ContextCompat.getMainExecutor(this);
+        //authentication succeed, continue tasts that requires auth
+        //failed authenticating, stop tasks that requires auth
+        BiometricPrompt biometricPrompt = new BiometricPrompt(MainActivity.this, executor, new BiometricPrompt.AuthenticationCallback() {
             @Override
             public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
                 super.onAuthenticationError(errorCode, errString);
@@ -77,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     signatureString = sha256(timestamp + deviceID + getPreSharedSecret());
                     RequestQueue queue = Volley.newRequestQueue(context);
-                    String url ="https://acl.philipzhan.com/open?timestamp="+timestamp+"&device_id="+deviceID+"&pre_shared_secret="+getPreSharedSecret()+"&signature="+ URLEncoder.encode(generateSignature("MainKey", signatureString), "utf-8");
+                    String url = "https://acl.philipzhan.com/open?timestamp=" + timestamp + "&device_id=" + deviceID + "&pre_shared_secret=" + getPreSharedSecret() + "&signature=" + URLEncoder.encode(generateSignature("MainKey", signatureString), "utf-8");
                     StringRequest stringRequest;
                     stringRequest = new StringRequest(Request.Method.GET, url,
                             response -> {
@@ -99,7 +97,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        promptInfo = new BiometricPrompt.PromptInfo.Builder()
+        BiometricPrompt.PromptInfo promptInfo = new BiometricPrompt.PromptInfo.Builder()
                 .setTitle("Biometric Authentication")
                 .setSubtitle("Login using fingerprint authentication")
                 .setNegativeButtonText("User App Password")

@@ -13,6 +13,22 @@
             android:layout_height="wrap_content" android:id="@+id/deviceIDTextView2"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toTopOf="@+id/textView3"
-            android:layout_marginTop="76dp"/>
+            app:layout_constraintBottom_toTopOf="@+id/openButton"
+            app:layout_constraintTop_toTopOf="parent" app:layout_constraintHorizontal_bias="0.5"/>
+    <Button
+            android:text="OPEN"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:id="@+id/openButton"
+            app:layout_constraintTop_toBottomOf="@+id/deviceIDTextView2"
+            app:layout_constraintBottom_toTopOf="@+id/deactivateButton" app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintHorizontal_bias="0.5" app:layout_constraintEnd_toEndOf="parent"
+            android:onClick="openDoor"/>
+    <Button
+            android:text="Deactivate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:id="@+id/deactivateButton"
+            tools:layout_editor_absoluteY="482dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintHorizontal_bias="0.5" app:layout_constraintEnd_toEndOf="parent"
+            android:onClick="deactivateDevice"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

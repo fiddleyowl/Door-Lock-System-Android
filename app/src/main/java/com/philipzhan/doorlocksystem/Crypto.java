@@ -9,8 +9,10 @@ import org.spongycastle.pkcs.*;
 import org.spongycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 
 import javax.security.auth.x500.X500Principal;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
+import java.security.cert.CertificateException;
 import java.util.Base64;
 
 public class Crypto {
@@ -53,6 +55,19 @@ public class Crypto {
         return csr;
     }
 
+    public static String generateSignature(String alias, String message) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException, UnrecoverableEntryException, InvalidKeyException, SignatureException {
+        KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
+        keyStore.load(null);
+        KeyStore.Entry entry = keyStore.getEntry(alias, null);
+        PrivateKey privateKey = ((KeyStore.PrivateKeyEntry) entry).getPrivateKey();
+        PublicKey publicKey = keyStore.getCertificate(alias).getPublicKey();
+        Signature s = Signature.getInstance("SHA256withRSA");
+        s.initSign(privateKey);
+        s.update(message.getBytes(StandardCharsets.UTF_8));
+        byte[] signature = s.sign();
+        return bytesToHexString(signature);
+    }
+
     public static String sha256(String stringToHash) throws NoSuchAlgorithmException {
         return sha256(stringToHash.getBytes(StandardCharsets.UTF_8));
     }
@@ -75,8 +90,6 @@ public class Crypto {
     public static String randomBase64String(int length) {
         return Base64.getEncoder().encodeToString(randomBytes(length));
     }
-
-
 
     private static final char[] HEX_ARRAY = "0123456789abcdef".toCharArray();
     public static String bytesToHexString(byte[] bytes) {

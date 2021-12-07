@@ -10,8 +10,6 @@ import android.os.Bundle;
 import androidx.core.content.FileProvider;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.philipzhan.doorlocksystem.R;
@@ -91,6 +89,8 @@ public class RegisterActivity extends AppCompatActivity {
         stream.write(textCSR.getBytes(StandardCharsets.UTF_8));
         stream.close();
 
+        generatePreSharedSecret();
+
         // Display a system share sheet with generated CSR.
         Intent sendIntent = new Intent();
         Uri csrUri = FileProvider.getUriForFile(context, "com.philipzhan.doorlocksystem.provider", csrFile);
@@ -135,7 +135,7 @@ public class RegisterActivity extends AppCompatActivity {
             if (certificatePublicKey.getPublicExponent().equals(keyPairPublicKey.getPublicExponent()) && certificatePublicKey.getModulus().equals(keyPairPublicKey.getModulus())) {
                 Toast.makeText(context, "Certificate is valid, registering with Raspberry Pi.", Toast.LENGTH_SHORT).show();
                 RequestQueue queue = Volley.newRequestQueue(this);
-                String url ="https://acl.philipzhan.com/register_user?type="+"Android"+"&device_id="+deviceID+"&pre_shared_secret="+getPreSharedSecret()+"&certificate="+URLEncoder.encode(certText, "utf-8");
+                String url ="https://acl.philipzhan.com/register_user?type="+"Android"+"&device_id="+deviceID+"&pre_shared_secret="+ getPreSharedSecret() +"&certificate="+URLEncoder.encode(certText, "utf-8");
                 StringRequest stringRequest;
                 stringRequest = new StringRequest(Request.Method.GET, url,
                         response -> {
@@ -155,11 +155,15 @@ public class RegisterActivity extends AppCompatActivity {
         }
     }
 
-    public String getPreSharedSecret() {
+    public String generatePreSharedSecret() {
         String str = randomHexString(6);
         editor.putString("PreSharedSecret", str);
         editor.apply();
         return str;
+    }
+
+    public String getPreSharedSecret() {
+        return sharedPref.getString("PreSharedSecret", null);
     }
 
 }

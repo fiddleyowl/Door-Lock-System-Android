@@ -52,7 +52,6 @@ public class MainActivity extends AppCompatActivity {
         deviceIDTextView2.setText("Your device ID is: " + deviceID);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.R)
     public void openDoor(View view) {
         Executor executor = ContextCompat.getMainExecutor(this);
         //authentication succeed, continue tasts that requires auth
@@ -75,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     signatureString = sha256(timestamp + deviceID + getPreSharedSecret());
                     RequestQueue queue = Volley.newRequestQueue(context);
-                    String url = "https://acl.philipzhan.com/open?timestamp=" + timestamp + "&device_id=" + deviceID + "&pre_shared_secret=" + getPreSharedSecret() + "&signature=" + URLEncoder.encode(generateSignature("MainKey", signatureString), "utf-8");
+                    String url = "https://acl.philipzhan.com:8443/open?timestamp=" + timestamp + "&device_id=" + deviceID + "&pre_shared_secret=" + getPreSharedSecret() + "&signature=" + URLEncoder.encode(generateSignature("MainKey", signatureString), "utf-8");
                     StringRequest stringRequest;
                     stringRequest = new StringRequest(Request.Method.GET, url,
                             response -> {

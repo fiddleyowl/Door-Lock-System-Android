@@ -17,6 +17,7 @@ import org.spongycastle.operator.OperatorCreationException;
 import org.spongycastle.pkcs.PKCS10CertificationRequest;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
@@ -24,6 +25,8 @@ import java.security.cert.*;
 import java.security.cert.Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Base64;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.philipzhan.doorlocksystem.Crypto.*;
 
@@ -36,8 +39,10 @@ public class RegisterActivity extends AppCompatActivity {
     SharedPreferences.Editor editor;
 
     TextView deviceIDTextView;
-    EditText nameEditText;
+    EditText serverAddressEditText;
     EditText certificateEditText;
+    RadioButton httpsRadioButton;
+    RadioButton httpRadioButton;
 
     KeyPair keyPair;
 
@@ -55,8 +60,10 @@ public class RegisterActivity extends AppCompatActivity {
 
         // Link declared UI components with view in xml file.
         deviceIDTextView = findViewById(R.id.deviceIDTextView);
-        nameEditText = findViewById(R.id.nameEditText);
+        serverAddressEditText = findViewById(R.id.serverAddressEditText);
         certificateEditText = findViewById(R.id.certificateEditText);
+        httpRadioButton = findViewById(R.id.httpRadioButton);
+        httpsRadioButton = findViewById(R.id.httpsRadioButton);
 
         // Update UI components.
         deviceIDTextView.setText("Your device ID is: " + deviceID);
@@ -72,13 +79,14 @@ public class RegisterActivity extends AppCompatActivity {
 
     public void generateCertificateSigningRequest(View view) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException, IOException, OperatorCreationException {
         // Get name from EditText input.
-        if (nameEditText.getText().toString().length() == 0) {
-            Toast.makeText(context, "Enter a name before continuing.", Toast.LENGTH_SHORT).show();
+        if (!(validateServerAddress(serverAddressEditText.getText().toString()))) {
+            Toast.makeText(context, "Server address is invalid.", Toast.LENGTH_SHORT).show();
             return;
         }
+
         // Generate an RSA key pair and generate a certificate signing request based on the key pair.
         keyPair = generateRSAKeyPair("MainKey");
-        PKCS10CertificationRequest csr = generateCSR(keyPair, nameEditText.getText().toString());
+        PKCS10CertificationRequest csr = generateCSR(keyPair, deviceID);
         String textCSR = "-----BEGIN CERTIFICATE REQUEST-----\n" +
                 Base64.getEncoder().encodeToString(csr.getEncoded()) +
                 "\n-----END CERTIFICATE REQUEST-----\n";
@@ -107,6 +115,8 @@ public class RegisterActivity extends AppCompatActivity {
 
     }
 
+
+
     public void verifyCertificate(View view) throws CertificateException, IOException {
         // Get signed certificate from EditText input.
         String certText = certificateEditText.getText().toString();
@@ -131,11 +141,18 @@ public class RegisterActivity extends AppCompatActivity {
             // Check if the public key stored in AndroidKeyStore and the signed certificate matches.
             // If the exponent e and the modulus n are the same, they are the same key.
             RSAPublicKey certificatePublicKey = (RSAPublicKey) certificate.getPublicKey();
-            RSAPublicKey keyPairPublicKey = (RSAPublicKey) keyPair.getPublic();
+            RSAPublicKey keyPairPublicKey = (RSAPublicKey) getStoredRSAKeyPair("MainKey").getPublic();
+
             if (certificatePublicKey.getPublicExponent().equals(keyPairPublicKey.getPublicExponent()) && certificatePublicKey.getModulus().equals(keyPairPublicKey.getModulus())) {
                 Toast.makeText(context, "Certificate is valid, registering with Raspberry Pi.", Toast.LENGTH_SHORT).show();
                 RequestQueue queue = Volley.newRequestQueue(this);
-                String url ="https://acl.philipzhan.com/register_user?type="+"Android"+"&device_id="+deviceID+"&pre_shared_secret="+ getPreSharedSecret() +"&certificate="+URLEncoder.encode(certText, "utf-8");
+
+                String protocol = "https";
+                if (httpRadioButton.isChecked()) {
+                    protocol = "http";
+                }
+
+                String url = protocol+"://"+serverAddressEditText.getText().toString()+":8443/register_user?type=" + "Android" + "&device_id=" + deviceID + "&pre_shared_secret=" + getPreSharedSecret() + "&certificate=" + URLEncoder.encode(certText, "utf-8");
                 StringRequest stringRequest;
                 stringRequest = new StringRequest(Request.Method.GET, url,
                         response -> {
@@ -143,7 +160,8 @@ public class RegisterActivity extends AppCompatActivity {
                             editor.putBoolean("isRegistered", true);
                             editor.apply();
                         }, error -> {
-                    Toast.makeText(context, error.networkResponse.toString(), Toast.LENGTH_SHORT).show();
+                    System.out.println();
+                    Toast.makeText(context, error.toString(), Toast.LENGTH_SHORT).show();
                 });
                 queue.add(stringRequest);
             } else {
@@ -164,6 +182,44 @@ public class RegisterActivity extends AppCompatActivity {
 
     public String getPreSharedSecret() {
         return sharedPref.getString("PreSharedSecret", null);
+    }
+
+    public boolean validateServerAddress(String address) {
+        if (address.length() == 0) {
+            return false;
+        }
+
+        final String IPV4_REGEX =
+                "^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." +
+                        "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." +
+                        "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." +
+                        "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
+        final Pattern IPv4_PATTERN = Pattern.compile(IPV4_REGEX);
+        Matcher matcher4 = IPv4_PATTERN.matcher(address);
+        if (matcher4.matches()) {
+            return true;
+        }
+
+        final String IPV6_REGEX = "^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:)" +
+                "{1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]" +
+                "{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|" +
+                "[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z" +
+                "]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1" +
+                "}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$";
+        final Pattern IPv6_PATTERN = Pattern.compile(IPV6_REGEX);
+        Matcher matcher6 = IPv4_PATTERN.matcher(address);
+        if (matcher6.matches()) {
+            return true;
+        }
+
+        final String DOMAIN_REGEX = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
+        final Pattern DOMAIN_PATTERN = Pattern.compile(DOMAIN_REGEX);
+        Matcher matcher = IPv4_PATTERN.matcher(address);
+        if (matcher.matches()) {
+            return true;
+        }
+
+        return false;
     }
 
 }

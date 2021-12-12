@@ -14,7 +14,8 @@
             android:theme="@style/Theme.DoorLockSystem">
         <activity android:name=".activity.MainActivity">
         </activity>
-        <activity android:name=".activity.RegisterActivity">
+        <activity android:name=".activity.RegisterActivity" android:windowSoftInputMode="adjustPan|adjustResize">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 

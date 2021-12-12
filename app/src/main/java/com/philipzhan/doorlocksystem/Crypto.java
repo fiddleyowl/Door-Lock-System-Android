@@ -55,6 +55,16 @@ public class Crypto {
         return csr;
     }
 
+    public static KeyPair getStoredRSAKeyPair(String alias) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException, UnrecoverableEntryException {
+        KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
+        keyStore.load(null);
+        KeyStore.Entry entry = keyStore.getEntry(alias, null);
+        PrivateKey privateKey = ((KeyStore.PrivateKeyEntry) entry).getPrivateKey();
+        PublicKey publicKey = keyStore.getCertificate(alias).getPublicKey();
+        KeyPair keyPair = new KeyPair(publicKey, privateKey);
+        return keyPair;
+    }
+
     public static String generateSignature(String alias, String message) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException, UnrecoverableEntryException, InvalidKeyException, SignatureException {
         KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
         keyStore.load(null);

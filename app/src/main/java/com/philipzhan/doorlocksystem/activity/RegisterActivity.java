@@ -3,6 +3,8 @@ package com.philipzhan.doorlocksystem.activity;
 import android.content.*;
 import android.net.Uri;
 import android.provider.Settings;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
@@ -13,11 +15,9 @@ import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.philipzhan.doorlocksystem.R;
-import org.spongycastle.operator.OperatorCreationException;
 import org.spongycastle.pkcs.PKCS10CertificationRequest;
 
 import java.io.*;
-import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
@@ -65,6 +65,25 @@ public class RegisterActivity extends AppCompatActivity {
         httpRadioButton = findViewById(R.id.httpRadioButton);
         httpsRadioButton = findViewById(R.id.httpsRadioButton);
 
+        serverAddressEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                editor.putString("ServerAddress", s.toString());
+                editor.apply();
+            }
+        });
+        serverAddressEditText.setText(getStoredServerAddress());
+
         // Update UI components.
         deviceIDTextView.setText("Your device ID is: " + deviceID);
 
@@ -74,63 +93,88 @@ public class RegisterActivity extends AppCompatActivity {
             Intent mainActivity = new Intent(this, MainActivity.class);
             startActivity(mainActivity);
         }
-
     }
 
-    public void generateCertificateSigningRequest(View view) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException, IOException, OperatorCreationException {
-        // Get name from EditText input.
-        if (!(validateServerAddress(serverAddressEditText.getText().toString()))) {
-            Toast.makeText(context, "Server address is invalid.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // Generate an RSA key pair and generate a certificate signing request based on the key pair.
-        keyPair = generateRSAKeyPair("MainKey");
-        PKCS10CertificationRequest csr = generateCSR(keyPair, deviceID);
-        String textCSR = "-----BEGIN CERTIFICATE REQUEST-----\n" +
-                Base64.getEncoder().encodeToString(csr.getEncoded()) +
-                "\n-----END CERTIFICATE REQUEST-----\n";
-
-        // Save generated CSR to a temporary cache location.
-        File csrFile = File.createTempFile(deviceID, ".csr", cacheDir);
-        FileOutputStream stream = new FileOutputStream(csrFile);
-        stream.write(textCSR.getBytes(StandardCharsets.UTF_8));
-        stream.close();
-
-        generatePreSharedSecret();
-
-        // Display a system share sheet with generated CSR.
-        Intent sendIntent = new Intent();
-        Uri csrUri = FileProvider.getUriForFile(context, "com.philipzhan.doorlocksystem.provider", csrFile);
-        sendIntent.setAction(Intent.ACTION_SEND);
-        sendIntent.putExtra(Intent.EXTRA_STREAM, csrUri);
-        sendIntent.setType("text/plain");
-        Intent shareIntent = Intent.createChooser(sendIntent, null);
-        startActivity(shareIntent);
-
-        // Copy generated CSR to clipboard.
-        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-        ClipData clip = ClipData.newPlainText("simple text", textCSR);
-        clipboard.setPrimaryClip(clip);
-
-    }
-
-
-
-    public void verifyCertificate(View view) throws CertificateException, IOException {
-        // Get signed certificate from EditText input.
-        String certText = certificateEditText.getText().toString();
-        if (certText.length() == 0) {
-            Toast.makeText(context, "Response is empty.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // Read the CA certificate in assets directory.
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        InputStream caInputStream = getAssets().open("Door_Lock_CA.crt");
-        Certificate caCertificate = cf.generateCertificate(caInputStream);
-
+    public void generateNewCertificateSigningRequest(View view) {        // Generate an RSA key pair and generate a certificate signing request based on the key pair.
         try {
+            generateCertificateSigningRequest(generateRSAKeyPair("MainKey"));
+        } catch (Exception e) {
+            Toast.makeText(context, e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public void shareExistingCertificateSigningRequest(View view){
+        try {
+            generateCertificateSigningRequest(getStoredRSAKeyPair("MainKey"));
+        } catch (Exception e) {
+            Toast.makeText(context, e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public void generateCertificateSigningRequest(KeyPair localKeyPair){
+        try {
+            PKCS10CertificationRequest csr = generateCSR(localKeyPair, deviceID);
+            String textCSR = "-----BEGIN CERTIFICATE REQUEST-----\n" +
+                    Base64.getEncoder().encodeToString(csr.getEncoded()) +
+                    "\n-----END CERTIFICATE REQUEST-----\n";
+
+            // Save generated CSR to a temporary cache location.
+            File csrFile = File.createTempFile(deviceID, ".csr", cacheDir);
+            FileOutputStream stream = new FileOutputStream(csrFile);
+            stream.write(textCSR.getBytes(StandardCharsets.UTF_8));
+            stream.close();
+
+            generatePreSharedSecret();
+
+            // Display a system share sheet with generated CSR.
+            Intent sendIntent = new Intent();
+            Uri csrUri = FileProvider.getUriForFile(context, "com.philipzhan.doorlocksystem.provider", csrFile);
+            sendIntent.setAction(Intent.ACTION_SEND);
+            sendIntent.putExtra(Intent.EXTRA_STREAM, csrUri);
+            sendIntent.setType("text/plain");
+            Intent shareIntent = Intent.createChooser(sendIntent, null);
+            startActivity(shareIntent);
+
+            // Copy generated CSR to clipboard.
+            ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+            ClipData clip = ClipData.newPlainText("simple text", textCSR);
+            clipboard.setPrimaryClip(clip);
+        } catch (Exception e) {
+            Toast.makeText(context, e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public void clearAll(View view) {
+        try {
+            serverAddressEditText.setText("acl.philipzhan.com");
+            KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
+            keyStore.load(null);
+            keyStore.deleteEntry("MainKey");
+            certificateEditText.setText("");
+        } catch (Exception e) {
+            Toast.makeText(context, e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public void verifyCertificate(View view) {
+        try {
+            // Get server name from EditText input.
+            if (!(validateServerAddress(serverAddressEditText.getText().toString()))) {
+                Toast.makeText(context, "Server address is invalid.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Get signed certificate from EditText input.
+            String certText = certificateEditText.getText().toString();
+            if (certText.length() == 0) {
+                Toast.makeText(context, "Response is empty.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Read the CA certificate in assets directory.
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            InputStream caInputStream = getAssets().open("Door_Lock_CA.crt");
+            Certificate caCertificate = cf.generateCertificate(caInputStream);
             // Read the signed certificate entered in EditText.
             InputStream inputStream = new ByteArrayInputStream(certText.getBytes(StandardCharsets.UTF_8));
             Certificate certificate = cf.generateCertificate(inputStream);
@@ -165,19 +209,22 @@ public class RegisterActivity extends AppCompatActivity {
                 });
                 queue.add(stringRequest);
             } else {
-                Toast.makeText(context, "Certificate mismatches. Regenerate a signing request.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, "Certificate is valid, but mismatches with stroed key pair. Regenerate a signing request.", Toast.LENGTH_LONG).show();
             }
         } catch (Exception e) {
             e.printStackTrace();
-            Toast.makeText(context, "Response is invalid.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 
-    public String generatePreSharedSecret() {
+    public void generatePreSharedSecret() {
         String str = randomHexString(6);
         editor.putString("PreSharedSecret", str);
         editor.apply();
-        return str;
+    }
+
+    public String getStoredServerAddress() {
+        return sharedPref.getString("ServerAddress", "acl.philipzhan.com");
     }
 
     public String getPreSharedSecret() {
@@ -214,7 +261,7 @@ public class RegisterActivity extends AppCompatActivity {
 
         final String DOMAIN_REGEX = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
         final Pattern DOMAIN_PATTERN = Pattern.compile(DOMAIN_REGEX);
-        Matcher matcher = IPv4_PATTERN.matcher(address);
+        Matcher matcher = DOMAIN_PATTERN.matcher(address);
         if (matcher.matches()) {
             return true;
         }

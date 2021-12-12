@@ -19,18 +19,7 @@
             android:layout_height="wrap_content" android:id="@+id/textView3"
             android:textAlignment="center"
             app:layout_constraintTop_toBottomOf="@+id/deviceIDTextView"
-            app:layout_constraintBottom_toTopOf="@+id/linearLayout2" app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintHorizontal_bias="0.5" app:layout_constraintEnd_toEndOf="parent"/>
-    <EditText
-            android:layout_width="347dp"
-            android:layout_height="wrap_content"
-            android:inputType="textPersonName"
-            android:ems="10"
-            android:id="@+id/serverAddressEditText"
-            android:hint="Server Address"
-            android:text="acl.philipzhan.com"
-            app:layout_constraintTop_toBottomOf="@+id/linearLayout2"
-            app:layout_constraintBottom_toTopOf="@+id/linearLayout" app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/protocolRadioGroup" app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintHorizontal_bias="0.5" app:layout_constraintEnd_toEndOf="parent"/>
     <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="0dp"
@@ -41,8 +30,8 @@
         <Button
                 android:text="Generate Certificate Signing Request"
                 android:layout_width="320dp"
-                android:layout_height="wrap_content" android:id="@+id/button"
-                android:onClick="generateCertificateSigningRequest"
+                android:layout_height="wrap_content" android:id="@+id/createNewButton"
+                android:onClick="generateNewCertificateSigningRequest"
                 android:baselineAligned="false"
                 app:layout_constraintStart_toStartOf="parent" app:layout_constraintBottom_toBottomOf="parent"
                 android:layout_marginBottom="49dp" app:layout_constraintHorizontal_bias="0.5"
@@ -51,16 +40,19 @@
         <Button
                 android:text="Share Existing"
                 android:layout_width="150dp"
-                android:layout_height="wrap_content" android:id="@+id/button3"
+                android:layout_height="wrap_content" android:id="@+id/shareExistingButton"
                 style="@style/Widget.AppCompat.Button"
                 android:layout_marginTop="8dp"
-                app:layout_constraintTop_toBottomOf="@+id/button" app:layout_constraintStart_toStartOf="@+id/button"/>
+                app:layout_constraintTop_toBottomOf="@+id/createNewButton"
+                app:layout_constraintStart_toStartOf="@+id/createNewButton"
+                android:onClick="shareExistingCertificateSigningRequest"/>
         <Button
                 android:text="Clear All"
                 android:layout_width="150dp"
-                android:layout_height="wrap_content" android:id="@+id/button4"
-                app:layout_constraintEnd_toEndOf="@+id/button" app:layout_constraintTop_toTopOf="@+id/button3"
-                app:layout_constraintBottom_toBottomOf="@+id/button3"/>
+                android:layout_height="wrap_content" android:id="@+id/clearAllButton"
+                app:layout_constraintEnd_toEndOf="@+id/createNewButton"
+                app:layout_constraintTop_toTopOf="@+id/shareExistingButton"
+                app:layout_constraintBottom_toBottomOf="@+id/shareExistingButton" android:onClick="clearAll"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
     <EditText
@@ -72,34 +64,44 @@
             android:id="@+id/certificateEditText"
             android:hint="Paste response here."
             app:layout_constraintTop_toBottomOf="@+id/linearLayout"
-            app:layout_constraintBottom_toTopOf="@+id/button2" app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/verifyCertificateButton" app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintHorizontal_bias="0.5" app:layout_constraintEnd_toEndOf="parent"/>
     <Button
             android:text="Verify"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" android:id="@+id/button2"
+            android:layout_height="wrap_content" android:id="@+id/verifyCertificateButton"
             android:onClick="verifyCertificate"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/certificateEditText" app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintHorizontal_bias="0.5" app:layout_constraintEnd_toEndOf="parent"/>
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <EditText
+            android:layout_width="320dp"
+            android:layout_height="wrap_content"
+            android:inputType="textPersonName"
+            android:ems="10"
+            android:id="@+id/serverAddressEditText"
+            android:hint="Server Address"
+            android:text="acl.philipzhan.com"
+            app:layout_constraintTop_toBottomOf="@+id/protocolRadioGroup"
+            app:layout_constraintBottom_toTopOf="@+id/linearLayout" app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintHorizontal_bias="0.5" app:layout_constraintEnd_toEndOf="parent"/>
+    <RadioGroup
             android:layout_width="wrap_content"
-            android:layout_height="32dp"
+            android:layout_height="wrap_content" android:orientation="horizontal"
+            app:layout_constraintTop_toBottomOf="@+id/textView3"
+            app:layout_constraintBottom_toTopOf="@+id/serverAddressEditText"
             app:layout_constraintStart_toStartOf="parent" app:layout_constraintHorizontal_bias="0.5"
-            app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toBottomOf="@+id/textView3"
-            app:layout_constraintBottom_toTopOf="@+id/serverAddressEditText" android:id="@+id/linearLayout2"
-    >
+            app:layout_constraintEnd_toEndOf="parent" android:id="@+id/protocolRadioGroup"
+            android:checkedButton="@id/httpsRadioButton">
         <RadioButton
                 android:text="HTTPS"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" android:id="@+id/httpsRadioButton" android:checked="true"
-                app:layout_constraintBaseline_toBaselineOf="@+id/httpRadioButton" android:layout_marginEnd="68dp"
-                android:layout_marginRight="68dp" app:layout_constraintEnd_toEndOf="parent"/>
+                android:layout_height="wrap_content" android:orientation="horizontal" android:id="@+id/httpsRadioButton"
+        />
         <RadioButton
                 android:text="HTTP"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" android:id="@+id/httpRadioButton" android:checked="false"
-                android:layout_marginLeft="1dp" android:layout_marginStart="1dp"
-                app:layout_constraintStart_toEndOf="@+id/httpsRadioButton"/>
-    </androidx.constraintlayout.widget.ConstraintLayout>
+                android:layout_height="wrap_content" android:id="@+id/httpRadioButton"
+        />
+    </RadioGroup>
 </androidx.constraintlayout.widget.ConstraintLayout>

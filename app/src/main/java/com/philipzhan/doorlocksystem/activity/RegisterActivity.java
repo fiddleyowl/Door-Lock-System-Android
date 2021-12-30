@@ -10,6 +10,7 @@ import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import androidx.core.content.FileProvider;
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.StringRequest;
@@ -25,10 +26,12 @@ import java.security.cert.*;
 import java.security.cert.Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Base64;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.philipzhan.doorlocksystem.Crypto.*;
+import static com.philipzhan.doorlocksystem.PublicDefinitions.validateServerAddress;
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -95,7 +98,8 @@ public class RegisterActivity extends AppCompatActivity {
         }
     }
 
-    public void generateNewCertificateSigningRequest(View view) {        // Generate an RSA key pair and generate a certificate signing request based on the key pair.
+    public void generateNewCertificateSigningRequest(View view) {
+        // Generate an RSA key pair and generate a certificate signing request based on the key pair.
         try {
             generateCertificateSigningRequest(generateRSAKeyPair("MainKey"));
         } catch (Exception e) {
@@ -198,18 +202,23 @@ public class RegisterActivity extends AppCompatActivity {
 
                 String url = protocol+"://"+serverAddressEditText.getText().toString()+":8443/register_user?type=" + "Android" + "&device_id=" + deviceID + "&pre_shared_secret=" + getPreSharedSecret() + "&certificate=" + URLEncoder.encode(certText, "utf-8");
                 StringRequest stringRequest;
-                stringRequest = new StringRequest(Request.Method.GET, url,
-                        response -> {
-                            Toast.makeText(context, "Successfully registered your device.", Toast.LENGTH_SHORT).show();
-                            editor.putBoolean("isRegistered", true);
-                            editor.apply();
-                        }, error -> {
-                    System.out.println();
+                stringRequest = new StringRequest(Request.Method.GET, url, response -> {
+                    if (response.equals("Device registered.")) {
+                        Toast.makeText(context, "Successfully registered your device.", Toast.LENGTH_SHORT).show();
+                        editor.putBoolean("isRegistered", true);
+                        editor.apply();
+                        Intent mainActivity = new Intent(this, MainActivity.class);
+                        startActivity(mainActivity);
+                    } else {
+                        Toast.makeText(context, response, Toast.LENGTH_SHORT).show();
+                    }
+                }, error -> {
                     Toast.makeText(context, error.toString(), Toast.LENGTH_SHORT).show();
                 });
+                stringRequest.setRetryPolicy(new DefaultRetryPolicy(5000, 0, 1f));
                 queue.add(stringRequest);
             } else {
-                Toast.makeText(context, "Certificate is valid, but mismatches with stroed key pair. Regenerate a signing request.", Toast.LENGTH_LONG).show();
+                Toast.makeText(context, "Certificate is valid, but mismatches with stored key pair. Regenerate a signing request.", Toast.LENGTH_LONG).show();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -231,42 +240,9 @@ public class RegisterActivity extends AppCompatActivity {
         return sharedPref.getString("PreSharedSecret", null);
     }
 
-    public boolean validateServerAddress(String address) {
-        if (address.length() == 0) {
-            return false;
-        }
+    public void disableButtons() {
 
-        final String IPV4_REGEX =
-                "^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." +
-                        "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." +
-                        "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\." +
-                        "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
-        final Pattern IPv4_PATTERN = Pattern.compile(IPV4_REGEX);
-        Matcher matcher4 = IPv4_PATTERN.matcher(address);
-        if (matcher4.matches()) {
-            return true;
-        }
-
-        final String IPV6_REGEX = "^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:)" +
-                "{1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]" +
-                "{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|" +
-                "[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z" +
-                "]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1" +
-                "}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$";
-        final Pattern IPv6_PATTERN = Pattern.compile(IPV6_REGEX);
-        Matcher matcher6 = IPv4_PATTERN.matcher(address);
-        if (matcher6.matches()) {
-            return true;
-        }
-
-        final String DOMAIN_REGEX = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
-        final Pattern DOMAIN_PATTERN = Pattern.compile(DOMAIN_REGEX);
-        Matcher matcher = DOMAIN_PATTERN.matcher(address);
-        if (matcher.matches()) {
-            return true;
-        }
-
-        return false;
     }
+
 
 }

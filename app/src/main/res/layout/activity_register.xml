@@ -30,12 +30,13 @@
         <Button
                 android:text="Generate Certificate Signing Request"
                 android:layout_width="320dp"
-                android:layout_height="wrap_content" android:id="@+id/createNewButton"
+                android:layout_height="wrap_content" android:id="@+id/generateNewButton"
                 android:onClick="generateNewCertificateSigningRequest"
                 android:baselineAligned="false"
                 app:layout_constraintStart_toStartOf="parent" app:layout_constraintBottom_toBottomOf="parent"
                 android:layout_marginBottom="49dp" app:layout_constraintHorizontal_bias="0.5"
-                app:layout_constraintEnd_toEndOf="parent"/>
+                app:layout_constraintEnd_toEndOf="parent" android:backgroundTint="#2F7CF6"
+                android:textColor="@color/white"/>
 
         <Button
                 android:text="Share Existing"
@@ -43,16 +44,18 @@
                 android:layout_height="wrap_content" android:id="@+id/shareExistingButton"
                 style="@style/Widget.AppCompat.Button"
                 android:layout_marginTop="8dp"
-                app:layout_constraintTop_toBottomOf="@+id/createNewButton"
-                app:layout_constraintStart_toStartOf="@+id/createNewButton"
-                android:onClick="shareExistingCertificateSigningRequest"/>
+                app:layout_constraintTop_toBottomOf="@+id/generateNewButton"
+                app:layout_constraintStart_toStartOf="@+id/generateNewButton"
+                android:onClick="shareExistingCertificateSigningRequest" android:backgroundTint="#E9E9EA"
+                android:background="@empty" android:textColor="#2F7CF6"/>
         <Button
                 android:text="Clear All"
                 android:layout_width="150dp"
                 android:layout_height="wrap_content" android:id="@+id/clearAllButton"
-                app:layout_constraintEnd_toEndOf="@+id/createNewButton"
+                app:layout_constraintEnd_toEndOf="@+id/generateNewButton"
                 app:layout_constraintTop_toTopOf="@+id/shareExistingButton"
-                app:layout_constraintBottom_toBottomOf="@+id/shareExistingButton" android:onClick="clearAll"/>
+                app:layout_constraintBottom_toBottomOf="@+id/shareExistingButton" android:onClick="clearAll"
+                android:backgroundTint="#E9E9EA" android:textColor="#EB4D3D"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
     <EditText
@@ -68,12 +71,13 @@
             app:layout_constraintHorizontal_bias="0.5" app:layout_constraintEnd_toEndOf="parent"/>
     <Button
             android:text="Verify"
-            android:layout_width="wrap_content"
+            android:layout_width="200dp"
             android:layout_height="wrap_content" android:id="@+id/verifyCertificateButton"
             android:onClick="verifyCertificate"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/certificateEditText" app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintHorizontal_bias="0.5" app:layout_constraintEnd_toEndOf="parent"/>
+            app:layout_constraintHorizontal_bias="0.5" app:layout_constraintEnd_toEndOf="parent"
+            android:backgroundTint="#2F7CF6" android:textColor="@color/white"/>
     <EditText
             android:layout_width="320dp"
             android:layout_height="wrap_content"

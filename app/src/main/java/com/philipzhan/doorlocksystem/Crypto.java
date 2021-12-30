@@ -1,6 +1,5 @@
 package com.philipzhan.doorlocksystem;
 
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.security.keystore.*;
 import org.spongycastle.operator.*;
@@ -70,7 +69,7 @@ public class Crypto {
         keyStore.load(null);
         KeyStore.Entry entry = keyStore.getEntry(alias, null);
         PrivateKey privateKey = ((KeyStore.PrivateKeyEntry) entry).getPrivateKey();
-        PublicKey publicKey = keyStore.getCertificate(alias).getPublicKey();
+//        PublicKey publicKey = keyStore.getCertificate(alias).getPublicKey();
         Signature s = Signature.getInstance("SHA256withRSA");
         s.initSign(privateKey);
         s.update(message.getBytes(StandardCharsets.UTF_8));
